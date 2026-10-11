@@ -5,6 +5,9 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,7 +39,7 @@ jobs:
           place ic_launcher_round.xml $M/res/mipmap-anydpi-v26/ic_launcher_round.xml
           mkdir -p $M/assets
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -44,6 +47,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
+          cache-disabled: true
 
       - name: Download html2canvas
         run: |
@@ -54,7 +58,18 @@ jobs:
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
+      - name: APK dhoondein
+        run: find . -name "*.apk" -print
+
       - uses: actions/upload-artifact@v4
         with:
           name: SalesDashboard-APK
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Releases me APK daalen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Sales Dashboard APK ${{ github.run_number }}
+          files: app/build/outputs/apk/debug/app-debug.apk
