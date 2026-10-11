@@ -1,0 +1,60 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Project folders banayen
+        run: |
+          place() {
+            if [ -f "$1" ]; then
+              mkdir -p "$(dirname "$2")"
+              mv "$1" "$2"
+            fi
+          }
+          J=app/src/main/java/com/salesdashboard/app
+          M=app/src/main
+          place app-build.gradle app/build.gradle
+          place AndroidManifest.xml $M/AndroidManifest.xml
+          place MainActivity.java $J/MainActivity.java
+          place DbBridge.java $J/DbBridge.java
+          place WaBridge.java $J/WaBridge.java
+          place index.html $M/assets/index.html
+          place strings.xml $M/res/values/strings.xml
+          place colors.xml $M/res/values/colors.xml
+          place styles.xml $M/res/values/styles.xml
+          place file_paths.xml $M/res/xml/file_paths.xml
+          place ic_launcher_foreground.xml $M/res/drawable/ic_launcher_foreground.xml
+          place ic_launcher.xml $M/res/mipmap-anydpi-v26/ic_launcher.xml
+          place ic_launcher_round.xml $M/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          mkdir -p $M/assets
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      - name: Download html2canvas
+        run: |
+          curl -fsSL -o app/src/main/assets/html2canvas.min.js \
+            https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js \
+            || echo "html2canvas download nahi hui (app phir bhi chalegi)"
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SalesDashboard-APK
+          path: app/build/outputs/apk/debug/*.apk
